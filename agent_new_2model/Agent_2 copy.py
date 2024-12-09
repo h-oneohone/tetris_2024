@@ -828,7 +828,7 @@ class Gamestate:
                     return False
         return True
 
-    def update_score(self, lines, is_t_spin, is_clear):
+    def update_score(self, lines, is_t_spin, is_clear, height_sum):
         if is_t_spin:
             if lines == 1:
                 score_lines = 2
@@ -842,7 +842,11 @@ class Gamestate:
         else:
             score_lines = lines
 
-        add_score = (score_lines + 1) * score_lines / 2 * 10
+        add_score = 0
+        if score_lines < 3:
+            add_score = (score_lines + 1) * score_lines / 2 * 10
+
+        add_score -= max(height_sum , 0)
         # add_score = lines * 10
         # if is_clear:
         #     add_score += 60
@@ -897,7 +901,8 @@ class Gamestate:
         self.freeze()
         completed_lines = self.check_completed_lines(above_grid=above_grid)
         is_clear = self.check_clear_board()
-        add_score = self.update_score(completed_lines, is_t_spin, is_clear)
+        height_sum = self.get_height_sum()
+        add_score = self.update_score(completed_lines, is_t_spin, is_clear, height_sum)
         if self.check_collision() or (is_above_grid and completed_lines == 0):
             self.game_status = "gameover"
             done = True
@@ -1573,7 +1578,7 @@ class Conv2DModel(nn.Module):
 class Agent:
     def __init__(self, turn):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        weight_file_path = os.path.join(dir_path, "outer_1108")
+        weight_file_path = os.path.join(dir_path, "outer_130_2")
         self.model = Conv2DModel()
         self.model.load_state_dict(
             torch.load(weight_file_path, map_location=torch.device("cpu"))

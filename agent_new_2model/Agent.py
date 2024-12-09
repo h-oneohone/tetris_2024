@@ -1569,6 +1569,10 @@ class Conv2DModel(nn.Module):
         output = self.critic_output(x)
         return output
 
+from .Agent_2 import Agent_2
+agent_2 = Agent_2("")
+
+i_hung = 0
 
 class Agent:
     def __init__(self, turn):
@@ -1591,6 +1595,8 @@ class Agent:
         return converted_labels
 
     def get_actions(self, state):
+        global i_hung 
+        i_hung += 1
         array_2d = np.squeeze(state, axis=-1)
         broad_2010 = array_2d[:, :10]
 
@@ -1602,6 +1608,18 @@ class Agent:
         if count != 0:
             broad_2010 = broad_2010[:-count]
 
+        height = 0
+        occupied_rows = np.any(broad_2010 == 1, axis=1)
+        if np.any(occupied_rows):
+            highest_occupied_row = np.where(occupied_rows)[0][0]
+            height = broad_2010.shape[0] - highest_occupied_row
+
+        if height >= 18:
+            return [0,0,0,1,0,0,0]
+
+        if height >= 12:
+            return agent_2.get_actions(state)
+        
         new_row = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         for i in range(count):
             broad_2010 = np.insert(broad_2010, 0, new_row, axis=0)
@@ -1618,6 +1636,11 @@ class Agent:
         converted_piece = self.convert_matrix_to_labels(piece_next_duy)
         piece_current_duy = feature[6]
         piece_current_duy_convert = self.convert_matrix_to_labels([piece_current_duy])
+
+        # if (piece_current_duy_convert[0] == "Z" or piece_current_duy_convert[0] == "S" ) and (not self.ok):
+        #     self.ok = True
+        #     return [1]
+        
         Tetromino_hung = Tetromino.new_tetromino(piece_current_duy_convert[0])
         piece_next_hungs = converted_piece
         self.env_hung.current_state.define2(
@@ -1650,13 +1673,11 @@ class Agent:
         if not self.ok:
             self.ok = True
             best_moves_convert.append(0)
-
         count_turns_right = best_moves.count("turn right")
         count_turns_left = best_moves.count("turn left")
-        print("===========================================")
-        print("self.ok", self.ok)
-        print("best_moves", best_moves)
-        print("===========================================")
+        # print("===========================================")
+        # print("best_moves", best_moves)
+        # print("===========================================")
         if "hold" not in best_moves:
             if Tetromino_hung.type_str == "Z" or Tetromino_hung.type_str == "S":
                 if count_turns_left == 2:
@@ -1699,8 +1720,7 @@ class Agent:
                         best_moves.insert(0, "turn right")
 
         print("===========================================")
-        print("self.ok", self.ok)
-        print("best_moves after", best_moves)
+        # print("best_moves after", best_moves)
         print("best_moves_convert", best_moves_convert)
         print("===========================================")
 

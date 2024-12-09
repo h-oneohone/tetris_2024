@@ -1601,7 +1601,7 @@ class Agent:
                 count += 1
         if count != 0:
             broad_2010 = broad_2010[:-count]
-
+        
         new_row = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         for i in range(count):
             broad_2010 = np.insert(broad_2010, 0, new_row, axis=0)
@@ -1618,6 +1618,11 @@ class Agent:
         converted_piece = self.convert_matrix_to_labels(piece_next_duy)
         piece_current_duy = feature[6]
         piece_current_duy_convert = self.convert_matrix_to_labels([piece_current_duy])
+
+        if piece_current_duy_convert == 'Z' and (not self.ok):
+            self.ok = True
+            return [1]
+
         Tetromino_hung = Tetromino.new_tetromino(piece_current_duy_convert[0])
         piece_next_hungs = converted_piece
         self.env_hung.current_state.define2(

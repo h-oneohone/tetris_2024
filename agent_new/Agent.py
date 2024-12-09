@@ -1516,7 +1516,6 @@ class Game:
 class ModelDQN(nn.Module):
     def __init__(self):
         super(ModelDQN, self).__init__()
-        # Các lớp convolutional (sử dụng tên khớp với state_dict)
         self.conv2d = nn.Conv2d(
             in_channels=1, out_channels=64, kernel_size=(6, 6), stride=(1, 1), padding=0
         )
@@ -1528,7 +1527,6 @@ class ModelDQN(nn.Module):
             padding=0,
         )
 
-        # Các lớp pooling
         self.max_pooling2d = nn.MaxPool2d(kernel_size=(15, 5), stride=(1, 1), padding=0)
         self.average_pooling2d = nn.AvgPool2d(
             kernel_size=(15, 5), stride=(15, 5), padding=0
@@ -1540,7 +1538,6 @@ class ModelDQN(nn.Module):
             kernel_size=(17, 7), stride=(17, 7), padding=0
         )
 
-        # Các lớp fully connected
         self.fc1 = nn.Linear(685, 128)
         self.fc2 = nn.Linear(128, 64)
         self.fc3 = nn.Linear(64, 1)
@@ -1633,7 +1630,7 @@ class Conv2DModel(nn.Module):
 class Agent:
     def __init__(self, turn):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        weight_file_path = os.path.join(dir_path, "weight24000.pt")
+        weight_file_path = os.path.join(dir_path, "hung.pt")
         self.model = ModelDQN()
         self.model.load_state_dict(
             torch.load(weight_file_path, map_location=torch.device("cpu"))

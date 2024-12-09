@@ -562,7 +562,7 @@ ACTIONS = ["left", "right", "down", "turn left", "turn right", "drop"]
 IDLE_MAX = 9999
 
 
-class Gamestate:
+class Gamestate2:
     def __init__(self, grid=None, seed=None, rd=None, height=0):
         if seed is None:
             self.seed = random.randint(0, round(9e9))
@@ -656,12 +656,12 @@ class Gamestate:
         if seed is None:
             large_int = 999999999
             seed = random.randint(0, large_int)
-        gamestate = Gamestate(seed=seed)
+        gamestate = Gamestate2(seed=seed)
         gamestate.grid = gamestate.get_random_grid()
         return gamestate
 
     def copy(self):
-        state_copy = Gamestate(self.grid, rd=self.rd)
+        state_copy = Gamestate2(self.grid, rd=self.rd)
 
         state_copy.seed = self.seed
         state_copy.tetromino = self.tetromino.copy()
@@ -685,7 +685,7 @@ class Gamestate:
         return state_copy
 
     def define(self, tetromino, next):
-        state_copy = Gamestate(self.grid, rd=self.rd)
+        state_copy = Gamestate2(self.grid, rd=self.rd)
 
         state_copy.seed = self.seed
         state_copy.tetromino = tetromino
@@ -828,7 +828,7 @@ class Gamestate:
                     return False
         return True
 
-    def update_score(self, lines, is_t_spin, is_clear):
+    def update_score(self, lines, is_t_spin, is_clear, height_sum):
         if is_t_spin:
             if lines == 1:
                 score_lines = 2
@@ -842,7 +842,11 @@ class Gamestate:
         else:
             score_lines = lines
 
-        add_score = (score_lines + 1) * score_lines / 2 * 10
+        add_score = 0
+        if score_lines < 3:
+            add_score = (score_lines + 1) * score_lines / 2 * 10
+
+        add_score -= max(height_sum , 0)
         # add_score = lines * 10
         # if is_clear:
         #     add_score += 60
@@ -897,7 +901,8 @@ class Gamestate:
         self.freeze()
         completed_lines = self.check_completed_lines(above_grid=above_grid)
         is_clear = self.check_clear_board()
-        add_score = self.update_score(completed_lines, is_t_spin, is_clear)
+        height_sum = self.get_height_sum()
+        add_score = self.update_score(completed_lines, is_t_spin, is_clear, height_sum)
         if self.check_collision() or (is_above_grid and completed_lines == 0):
             self.game_status = "gameover"
             done = True
@@ -1139,11 +1144,11 @@ class Gamestate:
         return heights
 
 
-class Game:
+class Game2:
     def __init__(self, gui=None, seed=None, height=0):
         self.gui = gui
         self.seed = seed
-        self.current_state = Gamestate(seed=seed, height=height)
+        self.current_state = Gamestate2(seed=seed, height=height)
         self.all_possible_states = []
         self.height = height
 
@@ -1211,9 +1216,9 @@ class Game:
 
     def restart(self, height=None):
         if height is None:
-            self.current_state = Gamestate(seed=self.seed, height=self.height)
+            self.current_state = Gamestate2(seed=self.seed, height=self.height)
         else:
-            self.current_state = Gamestate(seed=self.seed, height=height)
+            self.current_state = Gamestate2(seed=self.seed, height=height)
         self.current_state.start()
 
     def update_gui(self, gamestate=None, is_display_current=True):
@@ -1265,7 +1270,7 @@ class Game:
                     if event.key == pygame.K_q:
                         self.act("hold")
                     if event.key == pygame.K_r:
-                        self.current_state = Gamestate(seed=self.seed)
+                        self.current_state = Gamestate2(seed=self.seed)
                         self.current_state.start()
                     if event.key == pygame.K_1:
                         self.display_all_possible_state()
@@ -1337,7 +1342,7 @@ class Game:
 
     @staticmethod
     def get_state_dqn_conv2d(gamestate):
-        return Game.get_main_grid_np_dqn(gamestate), Game.get_hold_next_np_dqn(
+        return Game2.get_main_grid_np_dqn(gamestate), Game2.get_hold_next_np_dqn(
             gamestate
         )
 
@@ -1457,7 +1462,7 @@ class Game:
         mains = list()
         hold_next = list()
         for gamestate in gamestates:
-            in1, in2 = Game.get_state_dqn_conv2d(gamestate)
+            in1, in2 = Game2.get_state_dqn_conv2d(gamestate)
             mains.append(in1)
             hold_next.append(in2)
 
@@ -1479,7 +1484,7 @@ class Game:
         mains = list()
         hold_next = list()
         for gamestate in gamestates:
-            in1, in2 = Game.get_state_dqn_conv2d(gamestate)
+            in1, in2 = Game2.get_state_dqn_conv2d(gamestate)
             mains.append(in1)
             hold_next.append(in2)
 
@@ -1570,17 +1575,17 @@ class Conv2DModel(nn.Module):
         return output
 
 
-class Agent:
+class Agent_2:
     def __init__(self, turn):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        weight_file_path = os.path.join(dir_path, "outer_1108")
+        weight_file_path = os.path.join(dir_path, "outer_130_2")
         self.model = Conv2DModel()
         self.model.load_state_dict(
             torch.load(weight_file_path, map_location=torch.device("cpu"))
         )
         self.current_actions = []
         self.ok = False
-        self.env_hung = Game(height=0)
+        self.env_hung = Game2(height=0)
 
     def convert_matrix_to_labels(self, matrix):
         labels = ["I", "O", "J", "L", "Z", "S", "T"]
